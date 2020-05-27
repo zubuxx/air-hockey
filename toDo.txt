@@ -1,0 +1,11 @@
+Rakieta2
+Obsługa hit przy górnej(dolenj) krawędzi
+Dysk
+Zmienić plansze (bardziej prostokątna)
+Bramki
+Obsługę odbić dysku
+Spowolnienie dysku
+Licznik punktów
+menu
+nicki graczy
+
