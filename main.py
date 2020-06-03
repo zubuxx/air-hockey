@@ -4,7 +4,7 @@ from pygame.locals import *
 #-----------------------------------------------------------------------
 # Parametry programu
 #-----------------------------------------------------------------------
-SCREEN_WIDTH = 700
+SCREEN_WIDTH = 650
 SCREEN_HEIGHT = 700
 SCREEN_SIZE = (SCREEN_WIDTH,SCREEN_HEIGHT)
 
@@ -28,6 +28,9 @@ def loadImage(name, useColorKey=False):
         #flaga RLEACCEL oznacza lepszą wydajność na ekranach bez akceleracji
         #wymaga from pygame.locals import *
     return image
+
+
+
 
 class Racket(pygame.sprite.Sprite):
     def __init__(self, first_position):
@@ -56,42 +59,36 @@ class Racket(pygame.sprite.Sprite):
         if self.first_height > SCREEN_HEIGHT/2:
             if self.rect.top <= SCREEN_HEIGHT/2 + 12:
                 self.rect.top = SCREEN_HEIGHT/2 + 12
-                if self.hitting:
-                    self.y_velocity = 0
-                    self.hitting = False
+                # if self.hitting:
+                #     self.y_velocity = 0
+                #     self.hitting = False
 
         if self.hitting:
             if self.rect.top <= self.future_position:
                 self.stop()
                 if self.back:
                     self.go_back()
-                    self.rect
-                    print("GOINGGG BACK")
+            elif self.rect.top == SCREEN_HEIGHT/2 + 12:
+                if self.back:
+                    self.go_back()
             elif self.back and self.rect.top >= self.old_position and self.hitting:
                 self.stop()
                 self.hitting = False
                 self.back = False
-                print("KONIEC HIT")
 
 
 
     def hit(self):
         if not self.hitting:
-            self.y_velocity = -30
+            self.old_position = self.rect.top
+            self.y_velocity = -20
             self.hitting = True
             self.future_position = self.rect.top - 60
-            print("HITING")
 
     def stop(self):
         self.y_velocity = 0
-        print("STOPING")
     def go_back(self):
-        self.old_position = self.rect.top + 60
-        self.y_velocity = 30
-        print("GOING BACK")
-
-
-
+        self.y_velocity = 20
 
 
 
@@ -124,25 +121,29 @@ while running:
             running = False
         elif event.type == KEYDOWN:
             if event.key == K_LEFT:
-                first_racket.x_velocity += -6
+                first_racket.x_velocity = -6
             elif event.key == K_DOWN:
-                first_racket.y_velocity += 6
+                if not first_racket.hitting:
+                    first_racket.y_velocity = 6
             elif event.key == K_UP:
-                first_racket.y_velocity += -6
+                if not first_racket.hitting:
+                    first_racket.y_velocity = -6
             elif event.key == K_RIGHT:
-                first_racket.x_velocity += 6
+                first_racket.x_velocity = 6
             elif event.key == K_RALT:
                 first_racket.hit()
 
         elif event.type == KEYUP:
             if event.key == K_LEFT:
-                first_racket.x_velocity += 6
+                first_racket.x_velocity = 0
             elif event.key == K_DOWN:
-                first_racket.y_velocity += -6
+                if not first_racket.hitting:
+                    first_racket.y_velocity = 0
             elif event.key == K_UP:
-                first_racket.y_velocity += 6
+                if not first_racket.hitting:
+                    first_racket.y_velocity = 0
             elif event.key == K_RIGHT:
-                first_racket.x_velocity += -6
+                first_racket.x_velocity = 0
             elif event.key == K_RALT:
                 first_racket.back = True
 
