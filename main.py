@@ -83,7 +83,7 @@ class Racket(pygame.sprite.Sprite):
             self.old_position = self.rect.top
             self.y_velocity = -20
             self.hitting = True
-            self.future_position = self.rect.top - 60
+            self.future_position = self.rect.top - 80
 
     def stop(self):
         self.y_velocity = 0
@@ -92,19 +92,36 @@ class Racket(pygame.sprite.Sprite):
 
 
 
+class Puck(pygame.sprite.Sprite):
+    def __init__(self, position):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = loadImage("racket.png", True)
+        self.rect = self.image.get_rect()
+        self.rect.center = (SCREEN_WIDTH/2, SCREEN_HEIGHT * 0.8)
+        self.x_velocity = 0
+        self.y_velocity = 0
 
+    def update(self):
+        pass
 
 
 
 
 screen = pygame.display.set_mode(SCREEN_SIZE)
-pygame.display.set_caption("Best shooter ever")
+pygame.display.set_caption("Cymbergaj")
 pygame.display.flip() #aktualizacja całej sceny
 
 
 background_image = loadImage("Background.png")
-# pygame.transform.smoothscale(background_image, (700, 600))
 screen.blit(background_image,(0,0))
+
+cage1 = loadImage("cage.png")
+screen.blit(cage1, (155, 688))
+
+cage2 = loadImage("cage.png")
+screen.blit(cage2, (155, 0))
+
+
 
 first_racket_sprite = pygame.sprite.RenderClear()
 first_racket = Racket((SCREEN_WIDTH / 2, 0.9 * SCREEN_HEIGHT))
@@ -135,15 +152,17 @@ while running:
 
         elif event.type == KEYUP:
             if event.key == K_LEFT:
-                first_racket.x_velocity = 0
+                if first_racket.x_velocity == -6:
+                    first_racket.x_velocity = 0
             elif event.key == K_DOWN:
-                if not first_racket.hitting:
+                if not first_racket.hitting and first_racket.y_velocity==6:
                     first_racket.y_velocity = 0
             elif event.key == K_UP:
-                if not first_racket.hitting:
+                if not first_racket.hitting and first_racket.y_velocity==-6:
                     first_racket.y_velocity = 0
             elif event.key == K_RIGHT:
-                first_racket.x_velocity = 0
+                if first_racket.x_velocity == 6:
+                    first_racket.x_velocity = 0
             elif event.key == K_RALT:
                 first_racket.back = True
 
