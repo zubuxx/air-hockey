@@ -146,9 +146,14 @@ class Racket_2(pygame.sprite.Sprite):
 
 
 class Puck(pygame.sprite.Sprite):
-    def __init__(self, position):
+    def __init__(self, color, posistion):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load("data/puck.png").convert_alpha()
+        # self.image = pygame.image.load("data/puck.png").convert_alpha()
+        self.image = pygame.Surface((90,90))
+        self.image.fill((255,255,255))
+        pygame.draw.circle(self.image, (color), (45,45), 45)
+        colorkey = self.image.get_at((0, 0))  # odczytaj kolor w punkcie (0,0)
+        self.image.set_colorkey(colorkey, RLEACCEL)
         self.rect = self.image.get_rect()
         self.rect.center = (SCREEN_WIDTH/2, SCREEN_HEIGHT * 0.75)
         self.x_velocity = 0
@@ -189,7 +194,7 @@ screen.blit(cage2, (180, 0))
 
 
 puck_sprite = pygame.sprite.RenderClear()
-puck = Puck((100, 0))
+puck = Puck(pygame.color.Color("blue"),(100, 0))
 puck_sprite.add(puck)
 
 first_racket_sprite = pygame.sprite.RenderClear()
@@ -269,7 +274,6 @@ while running:
     first_racket_sprite.clear(screen, background_image)
 
     puck_sprite.draw(screen)
-
     first_racket_sprite.draw(screen)
 
 
