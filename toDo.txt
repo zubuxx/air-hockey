@@ -1,11 +1,14 @@
-Rakieta2
-Obsługa hit przy górnej(dolenj) krawędzi
+Rakieta2 done
+Obsługa hit przy górnej(dolenj) krawędzi done
 Dysk
 Zmienić plansze (bardziej prostokątna)
-Bramki
+Bramki done
 Obsługę odbić dysku
 Spowolnienie dysku
 Licznik punktów
 menu
 nicki graczy
+zmienić dysk na okrągły!
+kolizja z rakietkami
+inicjalizacja rundy!
 
