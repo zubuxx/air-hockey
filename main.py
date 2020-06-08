@@ -10,7 +10,7 @@ SCREEN_SIZE = (SCREEN_WIDTH,SCREEN_HEIGHT)
 
 
 
-def loadImage(name, useColorKey=False):
+def loadImage(name, useColorKey=False, alpha=False):
     """ Załaduj obraz i przekształć go w powierzchnię.
 
     Funkcja ładuje obraz z pliku i konwertuje jego piksele
@@ -27,6 +27,8 @@ def loadImage(name, useColorKey=False):
         image.set_colorkey(colorkey, RLEACCEL) # ustaw kolor jako przezroczysty
         #flaga RLEACCEL oznacza lepszą wydajność na ekranach bez akceleracji
         #wymaga from pygame.locals import *
+    if alpha:
+        image = image.convert.a
     return image
 
 
@@ -56,9 +58,8 @@ class Racket_1(pygame.sprite.Sprite):
 
         if self.rect.bottom >= SCREEN_HEIGHT - 12:
             self.rect.bottom = SCREEN_HEIGHT - 12
-        if self.first_height > SCREEN_HEIGHT/2:
-            if self.rect.top <= SCREEN_HEIGHT/2 + 12:
-                self.rect.top = SCREEN_HEIGHT/2 + 12
+        if self.rect.top <= SCREEN_HEIGHT/2 + 12:
+            self.rect.top = SCREEN_HEIGHT/2 + 12
                 # if self.hitting:
                 #     self.y_velocity = 0
                 #     self.hitting = False
@@ -131,7 +132,6 @@ class Racket_2(pygame.sprite.Sprite):
                 self.back = False
 
 
-
     def hit(self):
         if not self.hitting:
             self.old_position = self.rect.top
@@ -148,21 +148,34 @@ class Racket_2(pygame.sprite.Sprite):
 class Puck(pygame.sprite.Sprite):
     def __init__(self, position):
         pygame.sprite.Sprite.__init__(self)
-        self.image = loadImage("racket.png", True)
+        self.image = pygame.image.load("data/puck.png").convert_alpha()
         self.rect = self.image.get_rect()
-        self.rect.center = (SCREEN_WIDTH/2, SCREEN_HEIGHT * 0.8)
+        self.rect.center = (SCREEN_WIDTH/2, SCREEN_HEIGHT * 0.75)
         self.x_velocity = 0
         self.y_velocity = 0
-
     def update(self):
-        pass
+        self.rect.move_ip((self.x_velocity, self.y_velocity))
+
+        if self.rect.left < 12:
+            self.rect.left = 12
+            self.x_velocity = - self.x_velocity
+        elif self.rect.right > SCREEN_WIDTH - 12:
+            self.rect.right = SCREEN_WIDTH - 12
+            self.x_velocity = - self.x_velocity
+
+        if self.rect.top <= 13:
+            self.rect.top = 13
+            self.y_velocity = -self.y_velocity
+        elif self.rect.bottom >= SCREEN_HEIGHT - 13:
+            self.rect.bottom = SCREEN_HEIGHT-13
+            self.y_velocity = - self.y_velocity
 
 
 
 
 screen = pygame.display.set_mode(SCREEN_SIZE)
 pygame.display.set_caption("Cymbergaj")
-pygame.display.flip() #aktualizacja całej sceny
+
 
 
 background_image = loadImage("Background.png")
@@ -175,6 +188,9 @@ cage2 = loadImage("cage.png")
 screen.blit(cage2, (180, 0))
 
 
+puck_sprite = pygame.sprite.RenderClear()
+puck = Puck((100, 0))
+puck_sprite.add(puck)
 
 first_racket_sprite = pygame.sprite.RenderClear()
 first_racket = Racket_1((SCREEN_WIDTH / 2, 0.9 * SCREEN_HEIGHT))
@@ -213,6 +229,7 @@ while running:
             elif event.key == K_SPACE:
                 second_racket.hit()
 
+
         elif event.type == KEYUP:
             if event.key == K_LEFT:
                 if first_racket.x_velocity == -6:
@@ -243,9 +260,20 @@ while running:
             elif event.key == K_SPACE:
                 second_racket.back = True
 
+
+
+    puck_sprite.update()
     first_racket_sprite.update()
+
+    puck_sprite.clear(screen, background_image)
     first_racket_sprite.clear(screen, background_image)
+
+    puck_sprite.draw(screen)
+
     first_racket_sprite.draw(screen)
+
+
+
     pygame.display.flip()
 
 
