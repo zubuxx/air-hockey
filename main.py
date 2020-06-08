@@ -4,7 +4,7 @@ from pygame.locals import *
 #-----------------------------------------------------------------------
 # Parametry programu
 #-----------------------------------------------------------------------
-SCREEN_WIDTH = 650
+SCREEN_WIDTH = 700
 SCREEN_HEIGHT = 700
 SCREEN_SIZE = (SCREEN_WIDTH,SCREEN_HEIGHT)
 
@@ -32,7 +32,7 @@ def loadImage(name, useColorKey=False):
 
 
 
-class Racket(pygame.sprite.Sprite):
+class Racket_1(pygame.sprite.Sprite):
     def __init__(self, first_position):
         pygame.sprite.Sprite.__init__(self)
         self.first_height = first_position[1]
@@ -91,6 +91,59 @@ class Racket(pygame.sprite.Sprite):
         self.y_velocity = 20
 
 
+class Racket_2(pygame.sprite.Sprite):
+    def __init__(self, first_position):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = loadImage("racket.png", True)
+        self.rect = self.image.get_rect()
+        self.rect.center = first_position
+        self.x_velocity = 0
+        self.y_velocity = 0
+        self.hitting = False
+        self.future_position = 0
+        self.old_position = 0
+        self.back = False
+
+    def update(self):
+        self.rect.move_ip((self.x_velocity, self.y_velocity))
+
+        if self.rect.left < 12:
+            self.rect.left = 12
+        elif self.rect.right > SCREEN_WIDTH - 12:
+            self.rect.right = SCREEN_WIDTH - 12
+
+        if self.rect.bottom >= SCREEN_HEIGHT/2 - 12:
+            self.rect.bottom = SCREEN_HEIGHT/2 - 12
+        if self.rect.top <=  12:
+            self.rect.top = 12
+
+        if self.hitting:
+            if self.rect.top >= self.future_position:
+                self.stop()
+                if self.back:
+                    self.go_back()
+            elif self.rect.bottom == SCREEN_HEIGHT/2 - 12:
+                if self.back:
+                    self.go_back()
+            elif self.back and self.rect.top <= self.old_position and self.hitting:
+                self.stop()
+                self.hitting = False
+                self.back = False
+
+
+
+    def hit(self):
+        if not self.hitting:
+            self.old_position = self.rect.top
+            self.y_velocity = 20
+            self.hitting = True
+            self.future_position = self.rect.top + 80
+
+    def stop(self):
+        self.y_velocity = 0
+    def go_back(self):
+        self.y_velocity = -20
+
 
 class Puck(pygame.sprite.Sprite):
     def __init__(self, position):
@@ -116,16 +169,16 @@ background_image = loadImage("Background.png")
 screen.blit(background_image,(0,0))
 
 cage1 = loadImage("cage.png")
-screen.blit(cage1, (155, 688))
+screen.blit(cage1, (180, 688))
 
 cage2 = loadImage("cage.png")
-screen.blit(cage2, (155, 0))
+screen.blit(cage2, (180, 0))
 
 
 
 first_racket_sprite = pygame.sprite.RenderClear()
-first_racket = Racket((SCREEN_WIDTH / 2, 0.9 * SCREEN_HEIGHT))
-second_racket = Racket((SCREEN_WIDTH / 2, 0.1 * SCREEN_HEIGHT))
+first_racket = Racket_1((SCREEN_WIDTH / 2, 0.9 * SCREEN_HEIGHT))
+second_racket = Racket_2((SCREEN_WIDTH / 2, 0.1 * SCREEN_HEIGHT))
 first_racket_sprite.add(first_racket)
 first_racket_sprite.add(second_racket)
 
@@ -149,6 +202,16 @@ while running:
                 first_racket.x_velocity = 6
             elif event.key == K_RALT:
                 first_racket.hit()
+            elif event.key == K_w:
+                second_racket.y_velocity = -6
+            elif event.key == K_s:
+                second_racket.y_velocity = 6
+            elif event.key == K_a:
+                second_racket.x_velocity = -6
+            elif event.key == K_d:
+                second_racket.x_velocity = 6
+            elif event.key == K_SPACE:
+                second_racket.hit()
 
         elif event.type == KEYUP:
             if event.key == K_LEFT:
@@ -165,8 +228,26 @@ while running:
                     first_racket.x_velocity = 0
             elif event.key == K_RALT:
                 first_racket.back = True
+            elif event.key == K_w:
+                if second_racket.y_velocity ==-6:
+                    second_racket.y_velocity = 0
+            elif event.key == K_s:
+                if second_racket.y_velocity == 6:
+                    second_racket.y_velocity = 0
+            elif event.key == K_a:
+                if second_racket.x_velocity == -6:
+                    second_racket.x_velocity = 0
+            elif event.key == K_d:
+                if second_racket.x_velocity == 6:
+                    second_racket.x_velocity = 0
+            elif event.key == K_SPACE:
+                second_racket.back = True
 
     first_racket_sprite.update()
     first_racket_sprite.clear(screen, background_image)
     first_racket_sprite.draw(screen)
     pygame.display.flip()
+
+
+
+
