@@ -1,6 +1,7 @@
 import pygame
 import os
 from pygame.locals import *
+import math
 #-----------------------------------------------------------------------
 # Parametry programu
 #-----------------------------------------------------------------------
@@ -105,6 +106,8 @@ class Racket_2(pygame.sprite.Sprite):
         self.old_position = 0
         self.back = False
 
+
+
     def update(self):
         self.rect.move_ip((self.x_velocity, self.y_velocity))
 
@@ -149,15 +152,19 @@ class Puck(pygame.sprite.Sprite):
     def __init__(self, color, posistion):
         pygame.sprite.Sprite.__init__(self)
         # self.image = pygame.image.load("data/puck.png").convert_alpha()
-        self.image = pygame.Surface((90,90))
+        self.image = pygame.Surface((80,80))
         self.image.fill((255,255,255))
-        pygame.draw.circle(self.image, (color), (45,45), 45)
+        pygame.draw.circle(self.image, (color), (40,40), 40)
         colorkey = self.image.get_at((0, 0))  # odczytaj kolor w punkcie (0,0)
         self.image.set_colorkey(colorkey, RLEACCEL)
         self.rect = self.image.get_rect()
         self.rect.center = (SCREEN_WIDTH/2, SCREEN_HEIGHT * 0.75)
         self.x_velocity = 0
         self.y_velocity = 0
+        self.collision = False
+        self.sin_1 = math.sin(math.radians(68))
+        self.sin_2 = math.sin(math.radians(22))
+
     def update(self):
         self.rect.move_ip((self.x_velocity, self.y_velocity))
 
@@ -174,6 +181,89 @@ class Puck(pygame.sprite.Sprite):
         elif self.rect.bottom >= SCREEN_HEIGHT - 13:
             self.rect.bottom = SCREEN_HEIGHT-13
             self.y_velocity = - self.y_velocity
+
+
+        # collisions
+        x1, y1 = self.rect.center
+        x2, y2 = first_racket.rect.center
+        x3, y3 = second_racket.rect.center
+        first_length = math.hypot(x1- x2, y1- y2)
+        second_length = math.hypot(x1 - x3, y1 - y3)
+        sin = (y1 - y2) / first_length
+        cos = (x1 - x2) / first_length
+        v_len = math.hypot(self.x_velocity, self.y_velocity)
+
+        if first_length <= 110 and not self.collision:
+
+
+                # odbicie
+                if abs(sin) > self.sin_1:
+                    self.y_velocity = -self.y_velocity
+                    self.y_velocity += math.ceil(first_racket.y_velocity*0.9)
+                    print("góra - dół !")
+                elif abs(sin) < self.sin_2:
+                    self.x_velocity = -self.x_velocity
+                    self.x_velocity += math.ceil(first_racket.x_velocity*0.9)
+                    print("bok")
+                else:
+                    if x1 < x2 and y1 < y2:
+                        self.x_velocity = v_len * sin
+                        self.y_velocity = v_len * cos
+                    elif y1 < y2:
+                        self.x_velocity = -v_len * sin
+                        self.y_velocity = -v_len * cos
+                    elif x1 > x2 and y1 > y2:
+                        self.x_velocity = v_len * sin
+                        self.y_velocity = v_len * cos
+                    else:
+                        self.x_velocity = -v_len * sin
+                        self.y_velocity = -v_len * cos
+
+                    print(f"new x = {self.x_velocity} \n new y = {self.y_velocity}")
+                    print(f"myx = {self.rect.center}, \n enemy = {first_racket.rect.center}")
+
+                    print("kąt")
+
+                # self.x_velocity = v_len * sin
+                # self.y_velocity = v_len * cos
+
+
+
+
+
+
+                if not first_racket.hitting:
+                    new_x1 = x2 + math.ceil(150* cos)
+                    new_y1 = y2 + math.ceil(150* sin)
+
+                else:
+                    new_x1 = x2 + math.ceil(120 * cos)
+                    new_y1 = y2 + math.ceil(120 * sin)
+
+                self.rect.center = (new_x1, new_y1)
+                self.collision = True
+
+
+
+
+
+
+        else:
+            self.collision = False
+        # spowolnienie do maxymalnej prędkości
+        max_velocity = 30
+        if v_len > max_velocity:
+            print("zbyt duża prędkość!!")
+
+            self.x_velocity = self.x_velocity * (max_velocity/v_len)
+            self.y_velocity = self.y_velocity * (max_velocity/v_len)
+            # self.y_velocity = math.sqrt(max_velocity**2 - x_vel**2)
+
+
+
+
+
+
 
 
 
