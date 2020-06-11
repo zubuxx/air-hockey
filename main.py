@@ -2,13 +2,16 @@ import pygame
 import os
 from pygame.locals import *
 import math
+import pandas as pd
+
 #-----------------------------------------------------------------------
 # Parametry programu
 #-----------------------------------------------------------------------
-SCREEN_WIDTH = 700
-SCREEN_HEIGHT = 700
+SCREEN_WIDTH = 850
+SCREEN_HEIGHT = 1000
 SCREEN_SIZE = (SCREEN_WIDTH,SCREEN_HEIGHT)
-
+PUCKEVENT_1 = pygame.USEREVENT
+PUCKEVENT_2 = pygame.USEREVENT + 1
 
 
 def loadImage(name, useColorKey=False, alpha=False):
@@ -149,7 +152,7 @@ class Racket_2(pygame.sprite.Sprite):
 
 
 class Puck(pygame.sprite.Sprite):
-    def __init__(self, color, posistion):
+    def __init__(self, color, position):
         pygame.sprite.Sprite.__init__(self)
         # self.image = pygame.image.load("data/puck.png").convert_alpha()
         self.image = pygame.Surface((80,80))
@@ -158,12 +161,13 @@ class Puck(pygame.sprite.Sprite):
         colorkey = self.image.get_at((0, 0))  # odczytaj kolor w punkcie (0,0)
         self.image.set_colorkey(colorkey, RLEACCEL)
         self.rect = self.image.get_rect()
-        self.rect.center = (SCREEN_WIDTH/2, SCREEN_HEIGHT * 0.75)
+        self.rect.center = position
         self.x_velocity = 0
         self.y_velocity = 0
         self.collision = False
         self.sin_1 = math.sin(math.radians(68))
         self.sin_2 = math.sin(math.radians(22))
+        self.ang = False
 
     def update(self):
         self.rect.move_ip((self.x_velocity, self.y_velocity))
@@ -175,12 +179,23 @@ class Puck(pygame.sprite.Sprite):
             self.rect.right = SCREEN_WIDTH - 12
             self.x_velocity = - self.x_velocity
 
-        if self.rect.top <= 13:
+        if self.rect.top <= 13 and (self.rect.right < 268 or self.rect.left > 578):
             self.rect.top = 13
             self.y_velocity = -self.y_velocity
-        elif self.rect.bottom >= SCREEN_HEIGHT - 13:
+        elif self.rect.bottom >= SCREEN_HEIGHT - 13 and (self.rect.right < 268 or self.rect.left > 578):
             self.rect.bottom = SCREEN_HEIGHT-13
             self.y_velocity = - self.y_velocity
+        elif self.rect.top >= SCREEN_HEIGHT - 10 and not (self.rect.right < 268 or self.rect.left > 578):
+            print("GOAL! 1 !")
+            self.kill()
+            round.new_point(1)
+            pygame.time.set_timer(PUCKEVENT_1, 2500)
+
+        elif self.rect.bottom <  10 and not (self.rect.right < 268 or self.rect.left > 578):
+            print("GOAL!! 2")
+            self.kill()
+            round.new_point(2)
+            pygame.time.set_timer(PUCKEVENT_2, 2500)
 
 
         # collisions
@@ -189,82 +204,191 @@ class Puck(pygame.sprite.Sprite):
         x3, y3 = second_racket.rect.center
         first_length = math.hypot(x1- x2, y1- y2)
         second_length = math.hypot(x1 - x3, y1 - y3)
-        sin = (y1 - y2) / first_length
-        cos = (x1 - x2) / first_length
+
         v_len = math.hypot(self.x_velocity, self.y_velocity)
-
+        #first racket
         if first_length <= 110 and not self.collision:
-
+            sin = (y1 - y2) / first_length
+            cos = (x1 - x2) / first_length
 
                 # odbicie
-                if abs(sin) > self.sin_1:
-                    self.y_velocity = -self.y_velocity
-                    self.y_velocity += math.ceil(first_racket.y_velocity*0.9)
-                    print("góra - dół !")
-                elif abs(sin) < self.sin_2:
-                    self.x_velocity = -self.x_velocity
-                    self.x_velocity += math.ceil(first_racket.x_velocity*0.9)
-                    print("bok")
+            if abs(sin) > self.sin_1:
+                self.y_velocity = -self.y_velocity
+                if self.y_velocity < 5:
+                    self.y_velocity += math.ceil(first_racket.y_velocity * 1.2)
                 else:
-                    if x1 < x2 and y1 < y2:
-                        self.x_velocity = v_len * sin
-                        self.y_velocity = v_len * cos
-                    elif y1 < y2:
-                        self.x_velocity = -v_len * sin
-                        self.y_velocity = -v_len * cos
-                    elif x1 > x2 and y1 > y2:
-                        self.x_velocity = v_len * sin
-                        self.y_velocity = v_len * cos
-                    else:
-                        self.x_velocity = -v_len * sin
-                        self.y_velocity = -v_len * cos
+                    self.y_velocity += math.ceil(first_racket.y_velocity*0.9)
+            elif abs(sin) < self.sin_2:
+                self.x_velocity = -self.x_velocity
+                self.x_velocity += math.ceil(first_racket.x_velocity*0.9)
+            else:
+                first_velocity = math.hypot(first_racket.x_velocity, first_racket.y_velocity)
+                if x1 < x2 and y1 < y2:
+                    self.x_velocity = v_len * sin
+                    self.y_velocity = v_len * cos
+                    self.x_velocity += first_velocity * sin
+                    self.y_velocity += first_velocity * cos
+                elif y1 < y2:
+                    self.x_velocity = -v_len * sin
+                    self.y_velocity = -v_len * cos
+                    self.x_velocity += -first_velocity * sin
+                    self.y_velocity += -first_velocity * cos
+                elif x1 > x2 and y1 > y2:
+                    self.x_velocity = v_len * sin
+                    self.y_velocity = v_len * cos
+                    self.x_velocity += first_velocity * sin
+                    self.y_velocity += first_velocity * cos
 
-                    print(f"new x = {self.x_velocity} \n new y = {self.y_velocity}")
-                    print(f"myx = {self.rect.center}, \n enemy = {first_racket.rect.center}")
+                else:
+                    self.x_velocity = -v_len * sin
+                    self.y_velocity = -v_len * cos
+                    self.x_velocity += -first_velocity * sin
+                    self.y_velocity += -first_velocity * cos
 
-                    print("kąt")
+
 
                 # self.x_velocity = v_len * sin
                 # self.y_velocity = v_len * cos
 
+            if not first_racket.hitting:
+                new_x1 = x2 + math.ceil(115* cos)
+                new_y1 = y2 + math.ceil(115* sin)
 
+            else:
+                new_x1 = x2 + math.ceil(120 * cos)
+                new_y1 = y2 + math.ceil(120 * sin)
 
+            self.rect.center = (new_x1, new_y1)
+            self.collision = True
 
+        #second racket
+        elif second_length <= 110 and not self.collision:
 
+            sin = (y1 - y3) / second_length
+            cos = (x1 - x3) / second_length
 
-                if not first_racket.hitting:
-                    new_x1 = x2 + math.ceil(150* cos)
-                    new_y1 = y2 + math.ceil(150* sin)
+                # odbicie
+            if abs(sin) > self.sin_1:
+                self.y_velocity = -self.y_velocity
+                if self.y_velocity < 5:
+                    self.y_velocity += math.ceil(second_racket.y_velocity * 1.2)
+                else:
+                    self.y_velocity += math.ceil(second_racket.y_velocity*0.9)
+            elif abs(sin) < self.sin_2:
+                self.x_velocity = -self.x_velocity
+                self.x_velocity += math.ceil(second_racket .x_velocity*0.9)
+            else:
+                racket_velocity = math.hypot(second_racket.x_velocity, second_racket.y_velocity)
+                if x1 < x3 and y1 < y3:
+                    self.x_velocity = v_len * sin
+                    self.y_velocity = v_len * cos
+                    self.x_velocity += racket_velocity * sin
+                    self.y_velocity += racket_velocity * cos
+                elif y1 < y3:
+                    self.x_velocity = -v_len * sin
+                    self.y_velocity = -v_len * cos
+                    self.x_velocity += -racket_velocity * sin
+                    self.y_velocity += -racket_velocity * cos
+                elif x1 > x3 and y1 > y3:
+                    self.x_velocity = v_len * sin
+                    self.y_velocity = v_len * cos
+                    self.x_velocity += racket_velocity * sin
+                    self.y_velocity += racket_velocity * cos
 
                 else:
-                    new_x1 = x2 + math.ceil(120 * cos)
-                    new_y1 = y2 + math.ceil(120 * sin)
+                    self.x_velocity = -v_len * sin
+                    self.y_velocity = -v_len * cos
+                    self.x_velocity += -racket_velocity * sin
+                    self.y_velocity += -racket_velocity * cos
 
-                self.rect.center = (new_x1, new_y1)
-                self.collision = True
+                # self.x_velocity = v_len * sin
+                # self.y_velocity = v_len * cos
 
+            if not second_racket.hitting:
+                new_x1 = x3 + math.ceil(115* cos)
+                new_y1 = y3 + math.ceil(115* sin)
 
+            else:
+                new_x1 = x3 + math.ceil(120 * cos)
+                new_y1 = y3 + math.ceil(120 * sin)
 
-
-
-
+            self.rect.center = (new_x1, new_y1)
+            self.collision = True
         else:
             self.collision = False
+
         # spowolnienie do maxymalnej prędkości
         max_velocity = 30
         if v_len > max_velocity:
-            print("zbyt duża prędkość!!")
 
             self.x_velocity = self.x_velocity * (max_velocity/v_len)
             self.y_velocity = self.y_velocity * (max_velocity/v_len)
             # self.y_velocity = math.sqrt(max_velocity**2 - x_vel**2)
 
+        else:
+            self.collision = False
+        # spowolnienie do maxymalnej prędkości
+
+        max_velocity = 30
+        if v_len > max_velocity:
+
+            self.x_velocity = self.x_velocity * (max_velocity / v_len)
+            self.y_velocity = self.y_velocity * (max_velocity / v_len)
+            # self.y_velocity = math.sqrt(max_velocity**2 - x_vel**2)
+
+class currentRound:
+    def __init__(self, screen):
+        self.p1_name = "Player 1"
+        self.p2_name = "Player 2"
+        self.p1_score = 0
+        self.p2_score = 0
+        self.screen = screen
+        self.name_font = pygame.font.SysFont("monospace", 30)
+        self.score_font = pygame.font.SysFont("monospace", 50)
+
+    def save_round(self):
+        if os.path.isfile("history.csv"):
+            data = pd.read_csv("history.csv")
+        else:
+            data = pd.DataFrame(columns=['date', 'name_1', 'name_2', 'score'])
+
+    def new_point(self, player):
+        if player == 1:
+            self.p1_score += 1
+        else:
+            self.p2_score += 1
+
+
+    def update_labels(self):
+        #Player 1
+        lbl_1 = self.name_font.render(f"{self.p1_name}", True, (255, 255, 255))
+        screen.blit(lbl_1, (70, 30))
+        lbl_2 = self.name_font.render(f"{self.p2_name}", True, (255, 255, 255))
+        screen.blit(lbl_2, (70,950))
+        lbl_3 = self.score_font.render(f"{self.p1_score}", True, (255, 255, 255))
+        screen.blit(lbl_3, (700, 30))
+        lbl_4 = self.score_font.render(f"{self.p2_score}", True, (255, 255, 255))
+        screen.blit(lbl_4, (700, 950))
+
+
+def create_my_puck():
+    puck = Puck(pygame.color.Color("blue"),(SCREEN_WIDTH/2, SCREEN_HEIGHT * 0.77))
+    puck_sprite.add(puck)
+    pygame.time.set_timer(PUCKEVENT_1, 0)
+
+def create_enemy_puck():
+    puck = Puck(pygame.color.Color("blue"),(SCREEN_WIDTH/2, SCREEN_HEIGHT * 0.23))
+    puck_sprite.add(puck)
+    pygame.time.set_timer(PUCKEVENT_2, 0)
 
 
 
 
+#functions neeeded in while loop:
 
-
+pygame.init()
+#inicjalizacja fontu
+my_font = pygame.font.SysFont("monospace", 15)
 
 
 
@@ -273,25 +397,22 @@ pygame.display.set_caption("Cymbergaj")
 
 
 
-background_image = loadImage("Background.png")
+background_image = loadImage("background_2.png")
 screen.blit(background_image,(0,0))
-
-cage1 = loadImage("cage.png")
-screen.blit(cage1, (180, 688))
-
-cage2 = loadImage("cage.png")
-screen.blit(cage2, (180, 0))
 
 
 puck_sprite = pygame.sprite.RenderClear()
-puck = Puck(pygame.color.Color("blue"),(100, 0))
+puck = Puck(pygame.color.Color("blue"),(SCREEN_WIDTH/2, SCREEN_HEIGHT * 0.23))
 puck_sprite.add(puck)
 
-first_racket_sprite = pygame.sprite.RenderClear()
+rackets_sprite = pygame.sprite.RenderClear()
 first_racket = Racket_1((SCREEN_WIDTH / 2, 0.9 * SCREEN_HEIGHT))
 second_racket = Racket_2((SCREEN_WIDTH / 2, 0.1 * SCREEN_HEIGHT))
-first_racket_sprite.add(first_racket)
-first_racket_sprite.add(second_racket)
+rackets_sprite.add(first_racket)
+rackets_sprite.add(second_racket)
+
+#napisy
+round = currentRound(screen)
 
 clock = pygame.time.Clock()
 running = True
@@ -354,21 +475,25 @@ while running:
                     second_racket.x_velocity = 0
             elif event.key == K_SPACE:
                 second_racket.back = True
+        elif event.type == PUCKEVENT_1:
+            create_my_puck()
+        elif event.type == PUCKEVENT_2:
+            create_enemy_puck()
 
-
+    screen.blit(background_image, (0, 0))
 
     puck_sprite.update()
-    first_racket_sprite.update()
+    rackets_sprite.update()
 
     puck_sprite.clear(screen, background_image)
-    first_racket_sprite.clear(screen, background_image)
+    rackets_sprite.clear(screen, background_image)
 
     puck_sprite.draw(screen)
-    first_racket_sprite.draw(screen)
+    rackets_sprite.draw(screen)
 
-
-
+    round.update_labels()
     pygame.display.flip()
+
 
 
 
