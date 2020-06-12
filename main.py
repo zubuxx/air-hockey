@@ -14,6 +14,11 @@ PUCKEVENT_1 = pygame.USEREVENT
 PUCKEVENT_2 = pygame.USEREVENT + 1
 
 
+#colors
+white = (255,255,255)
+COLOR_INACTIVE = (143,149,152)
+COLOR_ACTIVE = (35,42,66)
+
 def loadImage(name, useColorKey=False, alpha=False):
     """ Załaduj obraz i przekształć go w powierzchnię.
 
@@ -336,7 +341,7 @@ class Puck(pygame.sprite.Sprite):
             self.y_velocity = self.y_velocity * (max_velocity / v_len)
             # self.y_velocity = math.sqrt(max_velocity**2 - x_vel**2)
 
-class currentRound:
+class CurrentRound:
     def __init__(self, screen):
         self.p1_name = "Player 1"
         self.p2_name = "Player 2"
@@ -369,6 +374,44 @@ class currentRound:
         screen.blit(lbl_3, (700, 30))
         lbl_4 = self.score_font.render(f"{self.p2_score}", True, (255, 255, 255))
         screen.blit(lbl_4, (700, 950))
+
+class InputBox:
+    def __init__(self, x, y, w, h, text='', player=None):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.color = COLOR_INACTIVE
+        self.text = text
+        self.txt_surface = input_font.render(text, True, self.color)
+        self.active = False
+        self.player = player
+
+    def hadnle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.rect.collidepoint(event.pos):
+                self.active = not self.active
+            else:
+                self.active = False
+            self.color = COLOR_ACTIVE if self.active else COLOR_INACTIVE
+        if event.type == pygame.KEYDOWN:
+            if self.active:
+                if event.key == pygame.K_RETURN:
+                    if self.player is not None:
+                        if self.player == 1:
+                            round.p1_name = self.text
+                        elif self.player == 2:
+                            round.p2_name = self.text
+                    self.text = ''
+                elif event.key == pygame.K_BACKSPACE:
+                    self.text = self.text[:-1]
+                else:
+                    self.text += event.unicode
+                self.txt_surface = input_font.render(self.text, 1, self.color)
+    def update(self):
+        width = max(200, self.txt_surface.get_width()+10)
+        self.rect.w = width
+    def draw(self, screen):
+        screen.blit(self.txt_surface, (self.rect.x+5, self.rect.y+5))
+
+        pygame.draw.rect(screen, self.color, self.rect, 2)
 
 
 def create_my_puck():
@@ -412,66 +455,119 @@ rackets_sprite.add(first_racket)
 rackets_sprite.add(second_racket)
 
 #napisy
-round = currentRound(screen)
+round = CurrentRound(screen)
+
+
+#menu
+menu_background = pygame.Surface(SCREEN_SIZE)
+menu_background.set_alpha(160)
+menu_background.fill((66,0,0))
+
+menu_font = pygame.font.SysFont("Arial", 90)
+menu_lbl = menu_font.render("MENU", 1, (255,255,255))
+
+player_font = pygame.font.SysFont("Arial", 60)
+
+#inputs
+input_font = pygame.font.SysFont("Arial", 60)
+input_box1 = InputBox(80, 380, 140, 50, player=1)
+input_box2 = InputBox(600, 380, 140, 50, player=2)
+input_boxes = [input_box1, input_box2]
 
 clock = pygame.time.Clock()
+menu = True
 running = True
 while running:
     clock.tick(40)
+
+    while menu:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                quit()
+                running = False
+            for box in input_boxes:
+                box.hadnle_event(event)
+            if event.type == pygame.KEYDOWN:
+                if event.key == K_ESCAPE:
+                    menu = not menu
+
+
+
+
+        player_1_label = player_font.render(f"{round.p1_name}", 1, white)
+        player_2_label = player_font.render(f"{round.p2_name}", 1, white)
+
+        for box in input_boxes:
+            box.update()
+
+        screen.blit(background_image, (0, 0))
+        screen.blit(menu_background, (0,0))
+        screen.blit(menu_lbl, (SCREEN_WIDTH/2-86,100))
+        screen.blit(player_1_label, (100, 300))
+        screen.blit(player_2_label, (620, 300))
+        for box in input_boxes:
+            box.draw(screen)
+
+
+        clock.tick(30)
+        pygame.display.update()
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         elif event.type == KEYDOWN:
             if event.key == K_LEFT:
-                first_racket.x_velocity = -6
+                first_racket.x_velocity = -8
             elif event.key == K_DOWN:
                 if not first_racket.hitting:
-                    first_racket.y_velocity = 6
+                    first_racket.y_velocity = 8
             elif event.key == K_UP:
                 if not first_racket.hitting:
-                    first_racket.y_velocity = -6
+                    first_racket.y_velocity = -8
             elif event.key == K_RIGHT:
-                first_racket.x_velocity = 6
+                first_racket.x_velocity = 8
             elif event.key == K_RALT:
                 first_racket.hit()
             elif event.key == K_w:
-                second_racket.y_velocity = -6
+                second_racket.y_velocity = -8
             elif event.key == K_s:
-                second_racket.y_velocity = 6
+                second_racket.y_velocity = 8
             elif event.key == K_a:
-                second_racket.x_velocity = -6
+                second_racket.x_velocity = -8
             elif event.key == K_d:
-                second_racket.x_velocity = 6
+                second_racket.x_velocity = 8
             elif event.key == K_SPACE:
                 second_racket.hit()
+            elif event.key == K_ESCAPE:
+                menu = not menu
 
 
         elif event.type == KEYUP:
             if event.key == K_LEFT:
-                if first_racket.x_velocity == -6:
+                if first_racket.x_velocity == -8:
                     first_racket.x_velocity = 0
             elif event.key == K_DOWN:
-                if not first_racket.hitting and first_racket.y_velocity==6:
+                if not first_racket.hitting and first_racket.y_velocity==8:
                     first_racket.y_velocity = 0
             elif event.key == K_UP:
-                if not first_racket.hitting and first_racket.y_velocity==-6:
+                if not first_racket.hitting and first_racket.y_velocity==-8:
                     first_racket.y_velocity = 0
             elif event.key == K_RIGHT:
-                if first_racket.x_velocity == 6:
+                if first_racket.x_velocity == 8:
                     first_racket.x_velocity = 0
             elif event.key == K_RALT:
                 first_racket.back = True
             elif event.key == K_w:
-                if second_racket.y_velocity ==-6:
+                if second_racket.y_velocity ==-8:
                     second_racket.y_velocity = 0
             elif event.key == K_s:
-                if second_racket.y_velocity == 6:
+                if second_racket.y_velocity == 8:
                     second_racket.y_velocity = 0
             elif event.key == K_a:
-                if second_racket.x_velocity == -6:
+                if second_racket.x_velocity == -8:
                     second_racket.x_velocity = 0
             elif event.key == K_d:
-                if second_racket.x_velocity == 6:
+                if second_racket.x_velocity == 8:
                     second_racket.x_velocity = 0
             elif event.key == K_SPACE:
                 second_racket.back = True
