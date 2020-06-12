@@ -1,14 +1,18 @@
 Rakieta2 done
 Obsługa hit przy górnej(dolenj) krawędzi done
-Dysk
+Dyskdone
 Zmienić plansze (bardziej prostokątna)
-Bramki done
-Obsługę odbić dysku
-Spowolnienie dysku
-Licznik punktów
-menu
-nicki graczy
-zmienić dysk na okrągły!
-kolizja z rakietkami
-inicjalizacja rundy!
+Bramki done done
+Obsługę odbić dysku done
+Spowolnienie dysku done
+Licznik punktów done
+menudone
+nicki graczy done
+zmienić dysk na okrągły! done
+kolizja z rakietkami done
+inicjalizacja rundy! done
 
+licznik czasu
+ekran na koniec rundy
+zapis
+ostatnie mecze!
