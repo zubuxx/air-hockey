@@ -16,6 +16,10 @@ PUCKEVENT_2 = pygame.USEREVENT + 1
 
 #colors
 white = (255,255,255)
+red = (198,0,0)
+dark_green = (92,136,44)
+gray = (95,93,93)
+dark_blue = (34,75,145)
 COLOR_INACTIVE = (143,149,152)
 COLOR_ACTIVE = (35,42,66)
 
@@ -375,6 +379,8 @@ class CurrentRound:
         lbl_4 = self.score_font.render(f"{self.p2_score}", True, (255, 255, 255))
         screen.blit(lbl_4, (700, 950))
 
+
+
 class InputBox:
     def __init__(self, x, y, w, h, text='', player=None):
         self.rect = pygame.Rect(x, y, w, h)
@@ -413,6 +419,57 @@ class InputBox:
 
         pygame.draw.rect(screen, self.color, self.rect, 2)
 
+"""
+class Button:
+    def __init__(self, color, x, y, w, h, text=''):
+        self.color = color
+        self.x = x
+        self.y = y
+        self.width = w
+        self.height = h
+        self.text = text
+    def draw(self, win, outline=None):
+        if outline:
+            pygame.draw.rect(win, outline, (self.x, self.y, self.width, self.height), 0)
+        pygame.draw.rect(win, self.color, (self.x, self.y, self.width, self.height), 0)
+
+        if self.text != '':
+            text = button_font.render(self.text, 1, (0,0,0))
+            win.blit(text, (self.x + (self.width/2 - text.get_width()/2), self.y + (self.height/2 - text.get_height()/2)))
+
+    def isOver(self, pos):
+        if pos[0] > self.x and pos[0]:
+            pass
+"""
+class Button():
+    def __init__(self, x, y, w, h, color, text_color , action=None, text=""):
+        self.rect_filled = pygame.Rect(x,y,w,h)
+        self.rect_frame = pygame.Rect(x,y,w,h)
+        self.color = color
+        self.text_color = text_color
+        self.text = text
+        self.txt_surface = button_font.render(text, True, text_color)
+        self.action = action
+
+
+    def draw(self, screen):
+
+        pygame.draw.rect(screen, self.color, self.rect_filled, 0)
+        pygame.draw.rect(screen, white, self.rect_filled, 2)
+        screen.blit(self.txt_surface, (self.rect_filled.x + (self.rect_filled.w/2 - self.txt_surface.get_width()/2), self.rect_filled.y + (self.rect_filled.h/2 - self.txt_surface.get_height()/2)))
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.rect_filled.collidepoint(event.pos):
+                if self.action is not None:
+                    self.action()
+
+
+
+
+
+
+
 
 def create_my_puck():
     puck = Puck(pygame.color.Color("blue"),(SCREEN_WIDTH/2, SCREEN_HEIGHT * 0.77))
@@ -424,8 +481,18 @@ def create_enemy_puck():
     puck_sprite.add(puck)
     pygame.time.set_timer(PUCKEVENT_2, 0)
 
+def close():
+    quit()
+    global running
+    running = False
 
+def start():
+    global  menu
+    menu = False
 
+def history():
+    global history
+    history = True
 
 #functions neeeded in while loop:
 
@@ -474,8 +541,16 @@ input_box1 = InputBox(80, 380, 140, 50, player=1)
 input_box2 = InputBox(600, 380, 140, 50, player=2)
 input_boxes = [input_box1, input_box2]
 
+#buttons
+button_font = pygame.font.SysFont("timesnewromanboldttf", 40)
+start_button = Button(338, 800, 180, 50, dark_green, white,  start, "START")
+history_button = Button(90, 800, 210, 50, gray, white,  history, "HISTORIA")
+close_button = Button(555, 800, 200, 50, gray, white,  close, "KONIEC")
+button_boxes = [start_button, history_button, close_button]
+
 clock = pygame.time.Clock()
 menu = True
+history = False
 running = True
 while running:
     clock.tick(40)
@@ -487,6 +562,8 @@ while running:
                 running = False
             for box in input_boxes:
                 box.hadnle_event(event)
+            for button in button_boxes:
+                button.handle_event(event)
             if event.type == pygame.KEYDOWN:
                 if event.key == K_ESCAPE:
                     menu = not menu
@@ -505,9 +582,11 @@ while running:
         screen.blit(menu_lbl, (SCREEN_WIDTH/2-86,100))
         screen.blit(player_1_label, (100, 300))
         screen.blit(player_2_label, (620, 300))
+
         for box in input_boxes:
             box.draw(screen)
-
+        for button in button_boxes:
+            button.draw(screen)
 
         clock.tick(30)
         pygame.display.update()
