@@ -12,6 +12,7 @@ SCREEN_HEIGHT = 1000
 SCREEN_SIZE = (SCREEN_WIDTH,SCREEN_HEIGHT)
 PUCKEVENT_1 = pygame.USEREVENT
 PUCKEVENT_2 = pygame.USEREVENT + 1
+TIMEREVENT = pygame.USEREVENT + 2
 
 
 #colors
@@ -354,6 +355,7 @@ class CurrentRound:
         self.screen = screen
         self.name_font = pygame.font.SysFont("monospace", 30)
         self.score_font = pygame.font.SysFont("monospace", 50)
+        pygame.time.set_timer(TIMEREVENT, 1000)
 
     def save_round(self):
         if os.path.isfile("history.csv"):
@@ -490,9 +492,27 @@ def start():
     global  menu
     menu = False
 
+
 def history():
     global history
     history = True
+
+
+def decrease_time():
+    global timer
+    timer -= 1
+
+def show_timer(screen):
+    min_lbl = timer_font.render(str(math.floor(timer/60)) + ":", 1, gray)
+    if timer % 60 < 10:
+        sec_txt = "0"+str(timer%60)
+    else:
+        sec_txt = str(timer%60)
+    sec_lbl = timer_font.render(sec_txt, 1, gray)
+    screen.blit(min_lbl, (80,60))
+    screen.blit(sec_lbl, (100,60))
+
+
 
 #functions neeeded in while loop:
 
@@ -547,6 +567,12 @@ start_button = Button(338, 800, 180, 50, dark_green, white,  start, "START")
 history_button = Button(90, 800, 210, 50, gray, white,  history, "HISTORIA")
 close_button = Button(555, 800, 200, 50, gray, white,  close, "KONIEC")
 button_boxes = [start_button, history_button, close_button]
+
+#timer
+timer = 140
+timer_font = pygame.font.SysFont("timesnewromanboldttf", 25)
+
+
 
 clock = pygame.time.Clock()
 menu = True
@@ -654,6 +680,8 @@ while running:
             create_my_puck()
         elif event.type == PUCKEVENT_2:
             create_enemy_puck()
+        elif event.type == TIMEREVENT:
+            decrease_time()
 
     screen.blit(background_image, (0, 0))
 
@@ -665,8 +693,9 @@ while running:
 
     puck_sprite.draw(screen)
     rackets_sprite.draw(screen)
-
     round.update_labels()
+
+    show_timer(screen)
     pygame.display.flip()
 
 
