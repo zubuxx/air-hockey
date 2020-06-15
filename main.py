@@ -45,7 +45,10 @@ def loadImage(name, useColorKey=False, alpha=False):
         image = image.convert.a
     return image
 
-
+def loadSound(name):
+    fullname = os.path.join("data", name)
+    sound = pygame.mixer.Sound(fullname)
+    return sound
 
 
 class Racket_1(pygame.sprite.Sprite):
@@ -185,16 +188,21 @@ class Puck(pygame.sprite.Sprite):
         if self.rect.left < 12:
             self.rect.left = 12
             self.x_velocity = - self.x_velocity
+            sound1.play()
         elif self.rect.right > SCREEN_WIDTH - 12:
             self.rect.right = SCREEN_WIDTH - 12
             self.x_velocity = - self.x_velocity
+            sound1.play()
+
 
         if self.rect.top <= 13 and (self.rect.right < 268 or self.rect.left > 578):
             self.rect.top = 13
             self.y_velocity = -self.y_velocity
+            sound1.play()
         elif self.rect.bottom >= SCREEN_HEIGHT - 13 and (self.rect.right < 268 or self.rect.left > 578):
             self.rect.bottom = SCREEN_HEIGHT-13
             self.y_velocity = - self.y_velocity
+            sound1.play()
         elif self.rect.top >= SCREEN_HEIGHT - 10 and not (self.rect.right < 268 or self.rect.left > 578):
             print("GOAL! 1 !")
             self.kill()
@@ -218,6 +226,7 @@ class Puck(pygame.sprite.Sprite):
         v_len = math.hypot(self.x_velocity, self.y_velocity)
         #first racket
         if first_length <= 110 and not self.collision:
+            sound2.play()
             sin = (y1 - y2) / first_length
             cos = (x1 - x2) / first_length
 
@@ -290,22 +299,26 @@ class Puck(pygame.sprite.Sprite):
             else:
                 racket_velocity = math.hypot(second_racket.x_velocity, second_racket.y_velocity)
                 if x1 < x3 and y1 < y3:
+                    sound2.play()
                     self.x_velocity = v_len * sin
                     self.y_velocity = v_len * cos
                     self.x_velocity += racket_velocity * sin
                     self.y_velocity += racket_velocity * cos
                 elif y1 < y3:
+                    sound1.play()
                     self.x_velocity = -v_len * sin
                     self.y_velocity = -v_len * cos
                     self.x_velocity += -racket_velocity * sin
                     self.y_velocity += -racket_velocity * cos
                 elif x1 > x3 and y1 > y3:
+                    sound1.play()
                     self.x_velocity = v_len * sin
                     self.y_velocity = v_len * cos
                     self.x_velocity += racket_velocity * sin
                     self.y_velocity += racket_velocity * cos
 
                 else:
+                    sound1.play()
                     self.x_velocity = -v_len * sin
                     self.y_velocity = -v_len * cos
                     self.x_velocity += -racket_velocity * sin
@@ -364,6 +377,7 @@ class CurrentRound:
             data = pd.DataFrame(columns=['date', 'name_1', 'name_2', 'score'])
 
     def new_point(self, player):
+        sound3.play()
         if player == 1:
             self.p1_score += 1
         else:
@@ -571,6 +585,14 @@ button_boxes = [start_button, history_button, close_button]
 #timer
 timer = 140
 timer_font = pygame.font.SysFont("timesnewromanboldttf", 25)
+
+
+#sound effects
+sound1 = loadSound("audio1.wav")
+sound1.set_volume(0.8)
+sound2 = loadSound("audio1.wav")
+sound2.set_volume(0.6)
+sound3 = loadSound("goal.wav")
 
 
 
