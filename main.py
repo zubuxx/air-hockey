@@ -210,13 +210,11 @@ class Puck(pygame.sprite.Sprite):
             self.y_velocity = - self.y_velocity
             sound1.play()
         elif self.rect.top >= SCREEN_HEIGHT - 10 and not (self.rect.right < 268 or self.rect.left > 578):
-            print("GOAL! 1 !")
             self.kill()
             round.new_point(1)
             pygame.time.set_timer(PUCKEVENT_1, 2500)
 
         elif self.rect.bottom <  10 and not (self.rect.right < 268 or self.rect.left > 578):
-            print("GOAL!! 2")
             self.kill()
             round.new_point(2)
             pygame.time.set_timer(PUCKEVENT_2, 2500)
@@ -387,7 +385,7 @@ class CurrentRound:
         self.data.to_csv("history.csv", index=False)
     def new_point(self, player):
         sound3.play()
-        global finish
+        global finish, playing
         if player == 1:
             self.p1_score += 1
         else:
@@ -395,6 +393,7 @@ class CurrentRound:
         if check_end():
             self.finish_round()
             finish = True
+            playing = False
 
 
 
@@ -438,6 +437,9 @@ class CurrentRound:
             print(sprt)
             sprt.kill()
             print(sprt)
+        self.end = False
+        delate_event(PUCKEVENT_1)
+        delate_event(PUCKEVENT_2)
         if self.p1_score > self.p2_score:
             create_enemy_puck()
         else:
@@ -449,13 +451,14 @@ class CurrentRound:
         for racket in [first_racket, second_racket]:
             racket.x_velocity = 0
             racket.y_velocity = 0
+        print("new round")
         timer = 120
         if finish:
             finish = False
-        self.end = False
 
     def menu(self):
-        global menu, finish
+        global menu, finish, history
+        history = False
         finish = False
         menu = True
 
@@ -497,7 +500,6 @@ class InputBox:
         self.rect.w = width
     def draw(self, screen):
         screen.blit(self.txt_surface, (self.rect.x+5, self.rect.y+5))
-
         pygame.draw.rect(screen, self.color, self.rect, 2)
 
 class Button():
@@ -527,7 +529,8 @@ class Button():
 
 
 
-
+def delate_event(id):
+    pygame.time.set_timer(id, 0)
 def check_end():
     if round.p1_score == max_score  or round.p2_score == max_score or timer == 0:
         return True
@@ -538,18 +541,14 @@ def create_my_puck():
     if not round.end:
         puck = Puck(pygame.color.Color("blue"),(SCREEN_WIDTH/2, SCREEN_HEIGHT * 0.77))
         puck_sprite.add(puck)
-        print("my conf")
     pygame.time.set_timer(PUCKEVENT_1, 0)
-    print("creating my puck")
 
 def create_enemy_puck():
     if not round.end:
         puck = Puck(pygame.color.Color("blue"),(SCREEN_WIDTH/2, SCREEN_HEIGHT * 0.23))
         puck_sprite.add(puck)
-        print("enemy conf")
 
     pygame.time.set_timer(PUCKEVENT_2, 0)
-    print("creating enemy puck")
 
 
 def close():
@@ -558,24 +557,32 @@ def close():
     running = False
 
 def start():
-    global  menu
+    global  menu, playing, finish
     if check_end():
         round.new_round()
+        print(menu, playing, finish)
     menu = False
+    finish = False
+    playing = True
 
 
-def history():
-    global history
+def go_history():
+    global history, menu, finish, playing
+    menu = False
+    playing = False
+    finish = False
     history = True
+
 
 
 def decrease_time():
     global timer
     timer -= 1
     if timer == 0:
-        global finish
+        global finish, playing
         round.finish_round()
         finish = True
+        playing = False
 
 
 
@@ -590,10 +597,41 @@ def show_timer(screen):
     screen.blit(sec_lbl, (100,60))
 
 def play():
-    global menu
+    global menu, playing
     if not check_end():
         menu = not menu
+    playing = True
 
+def draw_history(screen):
+    data = round.load_data()
+    data = data.tail()
+    txt_list = []
+    height = 300
+    for inx, row in data.iterrows():
+        p1_txt = history_font.render(row["name_1"], 1, white)
+        score_txt = history_font.render(row["score"], 1, white)
+        p2_txt = history_font.render(row["name_2"], 1, white)
+        if row['time']%60 >= 10:
+            sec = str(row['time']%60)
+        else:
+            sec = "0" + str(row['time']%60)
+
+        time = str(math.floor(row["time"]/60)) + ":" + sec
+        time_txt = history_font.render(str(time), 1, white)
+        txt_list.append([p1_txt, score_txt, p2_txt, time_txt])
+    for txt in txt_list:
+        screen.blit(txt[0], (100, height))
+        screen.blit(txt[1], (280, height))
+        screen.blit(txt[2], (400, height))
+        screen.blit(txt[3], (640, height))
+        height += 50
+
+
+def history_to_menu():
+    global history, menu, playing
+    history = False
+    playing = False
+    menu=True
 
 pygame.init()
 #inicjalizacja fontu
@@ -642,18 +680,18 @@ input_box1 = InputBox(80, 380, 140, 50, player=1)
 input_box2 = InputBox(600, 380, 140, 50, player=2)
 input_boxes = [input_box1, input_box2]
 
-#buttons
+# buttons menu
 button_font = pygame.font.SysFont("timesnewromanboldttf", 40)
 start_button = Button(338, 800, 180, 50, dark_green, white,  start, "START")
-history_button = Button(90, 800, 210, 50, gray, white,  history, "HISTORIA")
+history_button = Button(90, 800, 210, 50, gray, white,  go_history, "HISTORIA")
 close_button = Button(555, 800, 200, 50, gray, white,  close, "KONIEC")
 button_boxes = [start_button, history_button, close_button]
 
 
 #finish screen
 menu_button = Button(555, 800, 210, 50, gray, white, round.menu, "MENU")
-history_button_f = Button(85, 800, 210, 50, gray, white,  history, "HISTORIA")
-new_round_button = Button(320, 800, 210, 50, dark_green, white, round.new_round, "GRAJ")
+history_button_f = Button(85, 800, 210, 50, gray, white,  go_history, "HISTORIA")
+new_round_button = Button(320, 800, 210, 50, dark_green, white, start, "GRAJ")
 save_game = Button(SCREEN_WIDTH/2-150, 550, 330, 50, gray, white, round.save_round, "ZAPISZ WYNIK")
 finish_buttons = [menu_button, new_round_button, save_game, history_button_f]
 
@@ -665,16 +703,38 @@ sound2 = loadSound("audio1.wav")
 sound2.set_volume(0.6)
 sound3 = loadSound("goal.wav")
 
+#history font
+history_font = pygame.font.SysFont("Arial", 40)
+menu_button_h = Button(180, 800, 210, 50, gray, white, round.menu, "MENU")
+close_button_h = Button(420, 800, 200, 50, gray, white,  close, "KONIEC")
+history_buttons = [menu_button_h, close_button_h]
 
 
 clock = pygame.time.Clock()
+running = True
 menu = True
 history = False
-running = True
 finish = False
+playing = True
 
 while running:
     clock.tick(40)
+    while history:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                quit()
+                running=False
+            for button in history_buttons:
+                button.handle_event(event)
+        screen.blit(background_image, (0, 0))
+        screen.blit(menu_background, (0, 0))
+        draw_history(screen)
+
+        for button in history_buttons:
+            button.draw(screen)
+
+        clock.tick(30)
+        pygame.display.update()
 
     while finish:
         for event in pygame.event.get():
@@ -732,87 +792,89 @@ while running:
 
         clock.tick(30)
         pygame.display.update()
+    while playing:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                quit()
+                running = False
+            elif event.type == KEYDOWN:
+                if event.key == K_LEFT:
+                    first_racket.x_velocity = -8
+                elif event.key == K_DOWN:
+                    if not first_racket.hitting:
+                        first_racket.y_velocity = 8
+                elif event.key == K_UP:
+                    if not first_racket.hitting:
+                        first_racket.y_velocity = -8
+                elif event.key == K_RIGHT:
+                    first_racket.x_velocity = 8
+                elif event.key == K_RALT:
+                    first_racket.hit()
+                elif event.key == K_w:
+                    second_racket.y_velocity = -8
+                elif event.key == K_s:
+                    second_racket.y_velocity = 8
+                elif event.key == K_a:
+                    second_racket.x_velocity = -8
+                elif event.key == K_d:
+                    second_racket.x_velocity = 8
+                elif event.key == K_SPACE:
+                    second_racket.hit()
+                elif event.key == K_ESCAPE:
+                    menu = not menu
+                    playing = not playing
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == KEYDOWN:
-            if event.key == K_LEFT:
-                first_racket.x_velocity = -8
-            elif event.key == K_DOWN:
-                if not first_racket.hitting:
-                    first_racket.y_velocity = 8
-            elif event.key == K_UP:
-                if not first_racket.hitting:
-                    first_racket.y_velocity = -8
-            elif event.key == K_RIGHT:
-                first_racket.x_velocity = 8
-            elif event.key == K_RALT:
-                first_racket.hit()
-            elif event.key == K_w:
-                second_racket.y_velocity = -8
-            elif event.key == K_s:
-                second_racket.y_velocity = 8
-            elif event.key == K_a:
-                second_racket.x_velocity = -8
-            elif event.key == K_d:
-                second_racket.x_velocity = 8
-            elif event.key == K_SPACE:
-                second_racket.hit()
-            elif event.key == K_ESCAPE:
-                menu = not menu
 
+            elif event.type == KEYUP:
+                if event.key == K_LEFT:
+                    if first_racket.x_velocity == -8:
+                        first_racket.x_velocity = 0
+                elif event.key == K_DOWN:
+                    if not first_racket.hitting and first_racket.y_velocity==8:
+                        first_racket.y_velocity = 0
+                elif event.key == K_UP:
+                    if not first_racket.hitting and first_racket.y_velocity==-8:
+                        first_racket.y_velocity = 0
+                elif event.key == K_RIGHT:
+                    if first_racket.x_velocity == 8:
+                        first_racket.x_velocity = 0
+                elif event.key == K_RALT:
+                    first_racket.back = True
+                elif event.key == K_w:
+                    if second_racket.y_velocity ==-8:
+                        second_racket.y_velocity = 0
+                elif event.key == K_s:
+                    if second_racket.y_velocity == 8:
+                        second_racket.y_velocity = 0
+                elif event.key == K_a:
+                    if second_racket.x_velocity == -8:
+                        second_racket.x_velocity = 0
+                elif event.key == K_d:
+                    if second_racket.x_velocity == 8:
+                        second_racket.x_velocity = 0
+                elif event.key == K_SPACE:
+                    second_racket.back = True
+            elif event.type == PUCKEVENT_1:
+                create_my_puck()
+            elif event.type == PUCKEVENT_2:
+                create_enemy_puck()
+            elif event.type == TIMEREVENT:
+                decrease_time()
 
-        elif event.type == KEYUP:
-            if event.key == K_LEFT:
-                if first_racket.x_velocity == -8:
-                    first_racket.x_velocity = 0
-            elif event.key == K_DOWN:
-                if not first_racket.hitting and first_racket.y_velocity==8:
-                    first_racket.y_velocity = 0
-            elif event.key == K_UP:
-                if not first_racket.hitting and first_racket.y_velocity==-8:
-                    first_racket.y_velocity = 0
-            elif event.key == K_RIGHT:
-                if first_racket.x_velocity == 8:
-                    first_racket.x_velocity = 0
-            elif event.key == K_RALT:
-                first_racket.back = True
-            elif event.key == K_w:
-                if second_racket.y_velocity ==-8:
-                    second_racket.y_velocity = 0
-            elif event.key == K_s:
-                if second_racket.y_velocity == 8:
-                    second_racket.y_velocity = 0
-            elif event.key == K_a:
-                if second_racket.x_velocity == -8:
-                    second_racket.x_velocity = 0
-            elif event.key == K_d:
-                if second_racket.x_velocity == 8:
-                    second_racket.x_velocity = 0
-            elif event.key == K_SPACE:
-                second_racket.back = True
-        elif event.type == PUCKEVENT_1:
-            create_my_puck()
-        elif event.type == PUCKEVENT_2:
-            create_enemy_puck()
-        elif event.type == TIMEREVENT:
-            decrease_time()
+        screen.blit(background_image, (0, 0))
 
-    screen.blit(background_image, (0, 0))
+        puck_sprite.update()
+        rackets_sprite.update()
 
-    puck_sprite.update()
-    rackets_sprite.update()
+        puck_sprite.clear(screen, background_image)
+        rackets_sprite.clear(screen, background_image)
 
-    puck_sprite.clear(screen, background_image)
-    rackets_sprite.clear(screen, background_image)
+        puck_sprite.draw(screen)
+        rackets_sprite.draw(screen)
+        round.update_labels()
 
-    puck_sprite.draw(screen)
-    rackets_sprite.draw(screen)
-    round.update_labels()
-
-    show_timer(screen)
-    pygame.display.flip()
+        show_timer(screen)
+        pygame.display.flip()
 
 
 
