@@ -18,11 +18,17 @@ TIMEREVENT = pygame.USEREVENT + 2
 #colors
 white = (255,255,255)
 red = (198,0,0)
+green = (0, 204, 0)
+yellow = (255,255,0)
 dark_green = (92,136,44)
 gray = (95,93,93)
 dark_blue = (34,75,145)
 COLOR_INACTIVE = (143,149,152)
 COLOR_ACTIVE = (35,42,66)
+
+#do ilu punktw się gra
+max_score = 5
+
 
 def loadImage(name, useColorKey=False, alpha=False):
     """ Załaduj obraz i przekształć go w powierzchnię.
@@ -282,7 +288,7 @@ class Puck(pygame.sprite.Sprite):
 
         #second racket
         elif second_length <= 110 and not self.collision:
-
+            sound2.play()
             sin = (y1 - y3) / second_length
             cos = (x1 - x3) / second_length
 
@@ -299,26 +305,22 @@ class Puck(pygame.sprite.Sprite):
             else:
                 racket_velocity = math.hypot(second_racket.x_velocity, second_racket.y_velocity)
                 if x1 < x3 and y1 < y3:
-                    sound2.play()
                     self.x_velocity = v_len * sin
                     self.y_velocity = v_len * cos
                     self.x_velocity += racket_velocity * sin
                     self.y_velocity += racket_velocity * cos
                 elif y1 < y3:
-                    sound1.play()
                     self.x_velocity = -v_len * sin
                     self.y_velocity = -v_len * cos
                     self.x_velocity += -racket_velocity * sin
                     self.y_velocity += -racket_velocity * cos
                 elif x1 > x3 and y1 > y3:
-                    sound1.play()
                     self.x_velocity = v_len * sin
                     self.y_velocity = v_len * cos
                     self.x_velocity += racket_velocity * sin
                     self.y_velocity += racket_velocity * cos
 
                 else:
-                    sound1.play()
                     self.x_velocity = -v_len * sin
                     self.y_velocity = -v_len * cos
                     self.x_velocity += -racket_velocity * sin
@@ -368,24 +370,35 @@ class CurrentRound:
         self.screen = screen
         self.name_font = pygame.font.SysFont("monospace", 30)
         self.score_font = pygame.font.SysFont("monospace", 50)
+        self.end = False
         pygame.time.set_timer(TIMEREVENT, 1000)
 
-    def save_round(self):
+    def load_data(self):
         if os.path.isfile("history.csv"):
-            data = pd.read_csv("history.csv")
+            self.data = pd.read_csv("history.csv")
         else:
-            data = pd.DataFrame(columns=['date', 'name_1', 'name_2', 'score'])
+            self.data = pd.DataFrame(columns=['name_1', 'name_2', 'score', 'time'])
+        return self.data
 
+    def save_round(self):
+        self.load_data()
+        self.round = pd.DataFrame([[self.p1_name, self.p2_name, f"{self.p1_score}:{self.p2_score}", 120 - timer]], columns=['name_1', 'name_2', 'score', 'time'])
+        self.data = self.data.append(self.round)
+        self.data.to_csv("history.csv", index=False)
     def new_point(self, player):
         sound3.play()
+        global finish
         if player == 1:
             self.p1_score += 1
         else:
             self.p2_score += 1
+        if check_end():
+            self.finish_round()
+            finish = True
+
 
 
     def update_labels(self):
-        #Player 1
         lbl_1 = self.name_font.render(f"{self.p1_name}", True, (255, 255, 255))
         screen.blit(lbl_1, (70, 30))
         lbl_2 = self.name_font.render(f"{self.p2_name}", True, (255, 255, 255))
@@ -394,6 +407,58 @@ class CurrentRound:
         screen.blit(lbl_3, (700, 30))
         lbl_4 = self.score_font.render(f"{self.p2_score}", True, (255, 255, 255))
         screen.blit(lbl_4, (700, 950))
+
+    def finish_round(self):
+        if self.p1_score > self.p2_score:
+            self.p1_lbl = player_font.render(self.p1_name, 1, green)
+            self.p2_lbl = player_font.render(self.p2_name, 1, red)
+        elif self.p1_score < self.p2_score:
+            self.p1_lbl = player_font.render(self.p1_name, 1, red)
+            self.p2_lbl = player_font.render(self.p2_name, 1, green)
+        else:
+            self.p1_lbl = player_font.render(self.p1_name, 1, yellow)
+            self.p2_lbl = player_font.render(self.p2_name, 1, yellow)
+
+        self.p1_score_lbl = self.score_font.render(f"{self.p1_score}", 1, white)
+        self.p2_score_lbl = self.score_font.render(f"{self.p2_score}", 1, white)
+        self.end = True
+
+    def draw_finish(self, screen):
+        #names
+        screen.blit(self.p1_lbl, (185, 100))
+        screen.blit(self.p2_lbl, (530, 100))
+
+        #points
+        screen.blit(self.p1_score_lbl, (230, 150))
+        screen.blit(self.p2_score_lbl, (600, 150))
+
+    def new_round(self):
+        global timer, finish
+        for sprt in puck_sprite:
+            print(sprt)
+            sprt.kill()
+            print(sprt)
+        if self.p1_score > self.p2_score:
+            create_enemy_puck()
+        else:
+            create_my_puck()
+        self.p1_score = 0
+        self.p2_score = 0
+        first_racket.rect.center = (SCREEN_WIDTH / 2, 0.9 * SCREEN_HEIGHT)
+        second_racket.rect.center = (SCREEN_WIDTH / 2, 0.1 * SCREEN_HEIGHT)
+        for racket in [first_racket, second_racket]:
+            racket.x_velocity = 0
+            racket.y_velocity = 0
+        timer = 120
+        if finish:
+            finish = False
+        self.end = False
+
+    def menu(self):
+        global menu, finish
+        finish = False
+        menu = True
+
 
 
 
@@ -435,28 +500,6 @@ class InputBox:
 
         pygame.draw.rect(screen, self.color, self.rect, 2)
 
-"""
-class Button:
-    def __init__(self, color, x, y, w, h, text=''):
-        self.color = color
-        self.x = x
-        self.y = y
-        self.width = w
-        self.height = h
-        self.text = text
-    def draw(self, win, outline=None):
-        if outline:
-            pygame.draw.rect(win, outline, (self.x, self.y, self.width, self.height), 0)
-        pygame.draw.rect(win, self.color, (self.x, self.y, self.width, self.height), 0)
-
-        if self.text != '':
-            text = button_font.render(self.text, 1, (0,0,0))
-            win.blit(text, (self.x + (self.width/2 - text.get_width()/2), self.y + (self.height/2 - text.get_height()/2)))
-
-    def isOver(self, pos):
-        if pos[0] > self.x and pos[0]:
-            pass
-"""
 class Button():
     def __init__(self, x, y, w, h, color, text_color , action=None, text=""):
         self.rect_filled = pygame.Rect(x,y,w,h)
@@ -485,17 +528,29 @@ class Button():
 
 
 
-
+def check_end():
+    if round.p1_score == max_score  or round.p2_score == max_score or timer == 0:
+        return True
+    else:
+        return False
 
 def create_my_puck():
-    puck = Puck(pygame.color.Color("blue"),(SCREEN_WIDTH/2, SCREEN_HEIGHT * 0.77))
-    puck_sprite.add(puck)
+    if not round.end:
+        puck = Puck(pygame.color.Color("blue"),(SCREEN_WIDTH/2, SCREEN_HEIGHT * 0.77))
+        puck_sprite.add(puck)
+        print("my conf")
     pygame.time.set_timer(PUCKEVENT_1, 0)
+    print("creating my puck")
 
 def create_enemy_puck():
-    puck = Puck(pygame.color.Color("blue"),(SCREEN_WIDTH/2, SCREEN_HEIGHT * 0.23))
-    puck_sprite.add(puck)
+    if not round.end:
+        puck = Puck(pygame.color.Color("blue"),(SCREEN_WIDTH/2, SCREEN_HEIGHT * 0.23))
+        puck_sprite.add(puck)
+        print("enemy conf")
+
     pygame.time.set_timer(PUCKEVENT_2, 0)
+    print("creating enemy puck")
+
 
 def close():
     quit()
@@ -504,6 +559,8 @@ def close():
 
 def start():
     global  menu
+    if check_end():
+        round.new_round()
     menu = False
 
 
@@ -515,6 +572,12 @@ def history():
 def decrease_time():
     global timer
     timer -= 1
+    if timer == 0:
+        global finish
+        round.finish_round()
+        finish = True
+
+
 
 def show_timer(screen):
     min_lbl = timer_font.render(str(math.floor(timer/60)) + ":", 1, gray)
@@ -526,15 +589,19 @@ def show_timer(screen):
     screen.blit(min_lbl, (80,60))
     screen.blit(sec_lbl, (100,60))
 
+def play():
+    global menu
+    if not check_end():
+        menu = not menu
 
-
-#functions neeeded in while loop:
 
 pygame.init()
 #inicjalizacja fontu
 my_font = pygame.font.SysFont("monospace", 15)
 
-
+#timer
+timer = 5
+timer_font = pygame.font.SysFont("timesnewromanboldttf", 25)
 
 screen = pygame.display.set_mode(SCREEN_SIZE)
 pygame.display.set_caption("Cymbergaj")
@@ -582,9 +649,13 @@ history_button = Button(90, 800, 210, 50, gray, white,  history, "HISTORIA")
 close_button = Button(555, 800, 200, 50, gray, white,  close, "KONIEC")
 button_boxes = [start_button, history_button, close_button]
 
-#timer
-timer = 140
-timer_font = pygame.font.SysFont("timesnewromanboldttf", 25)
+
+#finish screen
+menu_button = Button(555, 800, 210, 50, gray, white, round.menu, "MENU")
+history_button_f = Button(85, 800, 210, 50, gray, white,  history, "HISTORIA")
+new_round_button = Button(320, 800, 210, 50, dark_green, white, round.new_round, "GRAJ")
+save_game = Button(SCREEN_WIDTH/2-150, 550, 330, 50, gray, white, round.save_round, "ZAPISZ WYNIK")
+finish_buttons = [menu_button, new_round_button, save_game, history_button_f]
 
 
 #sound effects
@@ -600,8 +671,31 @@ clock = pygame.time.Clock()
 menu = True
 history = False
 running = True
+finish = False
+
 while running:
     clock.tick(40)
+
+    while finish:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                quit()
+                running = False
+            for button in finish_buttons:
+                button.handle_event(event)
+            if event.type == pygame.KEYDOWN:
+                if event.key == K_ESCAPE:
+                    round.menu()
+
+        screen.blit(background_image, (0, 0))
+        screen.blit(menu_background, (0, 0))
+
+        round.draw_finish(screen)
+
+        for button in finish_buttons:
+            button.draw(screen)
+        clock.tick(30)
+        pygame.display.update()
 
     while menu:
         for event in pygame.event.get():
@@ -614,7 +708,7 @@ while running:
                 button.handle_event(event)
             if event.type == pygame.KEYDOWN:
                 if event.key == K_ESCAPE:
-                    menu = not menu
+                    play()
 
 
 
