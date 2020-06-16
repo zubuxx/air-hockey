@@ -15,11 +15,12 @@ Esc - menu
 
 Zapis wyników: <br/>
 Na koniec każdej rundy pojawia się ekran końcowy rundy oraz przycisk do zapisu gry.
-Zapisane wyniki można zobaczyć kilkając w przycisk "HISTORIA".
+Zapisane wyniki można zobaczyć kilkając w przycisk "HISTORIA". Wyniki są zapisywane w pliku "history.csv".
 (Ostatnie 5 zaspisanych wyników)
 
 Aby zmienić nazwę gracza należy wejść w menu, kilknąć w okienko pod napisem, wpisać nową nazwę oraz zatwierdzić przyciskiem "enter".
 
 Gra trwa dopóki skończy się czas (2 min) lub jeden z graczy zdobędzie 5 punktów. 
 
+Wielkość okna: 850 x 1000
 
