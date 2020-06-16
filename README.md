@@ -1,6 +1,6 @@
-#CYMBERGAJ
+# CYMBERGAJ
 
-##Instrukcja:
+## Instrukcja:
 Sterowanie rakietka:
 
 Gracz_1 (na dole): <br/>
