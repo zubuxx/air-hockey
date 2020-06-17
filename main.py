@@ -638,7 +638,7 @@ pygame.init()
 my_font = pygame.font.SysFont("monospace", 15)
 
 #timer
-timer = 5
+timer = 120
 timer_font = pygame.font.SysFont("timesnewromanboldttf", 25)
 
 screen = pygame.display.set_mode(SCREEN_SIZE)
