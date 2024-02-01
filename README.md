@@ -1,26 +1,24 @@
-# CYMBERGAJ
+# AIR-HOCKEY
 
-## Instrukcja:
-Sterowanie rakietka:
+This repository contains an air-hockey game created using Pygame. Dive into a fast-paced game experience with simple controls and engaging gameplay.
 
-Gracz_1 (na dole): <br/>
--strzałki - przemieszczanie <br/>
--prawy alt - odbicie
+## Instructions:
+### Controls for the paddles:
 
-Gracz 2 (na górze): <br/>
-w,s,a,d - przemieszczanie <br/>
-spacja - odbicie
+**Player 1 (at the bottom):**  
+- Arrows - Movement  
+- Right Alt - Hit
 
-Esc - menu
+**Player 2 (at the top):**  
+- W, A, S, D - Movement  
+- Space - Hit
 
-Zapis wyników: <br/>
-Na koniec każdej rundy pojawia się ekran końcowy rundy oraz przycisk do zapisu gry.
-Zapisane wyniki można zobaczyć kilkając w przycisk "HISTORIA". Wyniki są zapisywane w pliku "history.csv".
-(Ostatnie 5 zaspisanych wyników)
+**General:**  
+- Esc - Opens the menu
 
-Aby zmienić nazwę gracza należy wejść w menu, kilknąć w okienko pod napisem, wpisać nową nazwę oraz zatwierdzić przyciskiem "enter".
+The game lasts until the time runs out (2 minutes) or one of the players scores 5 points.
 
-Gra trwa dopóki skończy się czas (2 min) lub jeden z graczy zdobędzie 5 punktów. 
+### Score Saving:
+At the end of each round, a round end screen appears along with a button to save the game. Saved scores can be viewed by clicking on the "HISTORY" button. Scores are saved in the history.csv file.
 
-Wielkość okna: 850 x 1000
 
